@@ -1,4 +1,5 @@
 import flet as ft
+import math
 
 class CalcButton(ft.ElevatedButton):
     def __init__(self, text, button_clicked, expand=1):
@@ -8,13 +9,11 @@ class CalcButton(ft.ElevatedButton):
         self.on_click = button_clicked
         self.data = text
 
-
 class DigitButton(CalcButton):
     def __init__(self, text, button_clicked, expand=1):
         CalcButton.__init__(self, text, button_clicked, expand)
         self.bgcolor = ft.colors.WHITE24
         self.color = ft.colors.WHITE
-
 
 class ActionButton(CalcButton):
     def __init__(self, text, button_clicked):
@@ -22,16 +21,19 @@ class ActionButton(CalcButton):
         self.bgcolor = ft.colors.ORANGE
         self.color = ft.colors.WHITE
 
-
 class ExtraActionButton(CalcButton):
     def __init__(self, text, button_clicked):
         CalcButton.__init__(self, text, button_clicked)
         self.bgcolor = ft.colors.BLUE_GREY_100
         self.color = ft.colors.BLACK
 
+class TrigButton(CalcButton):
+    def __init__(self, text, button_clicked):
+        CalcButton.__init__(self, text, button_clicked)
+        self.bgcolor = ft.colors.LIGHT_GREEN_400
+        self.color = ft.colors.BLACK
 
 class CalculatorApp(ft.Container):
-    # application's root control (i.e. "view") containing all other controls
     def __init__(self):
         super().__init__()
         self.reset()
@@ -89,6 +91,13 @@ class CalculatorApp(ft.Container):
                         ActionButton(text="=", button_clicked=self.button_clicked),
                     ]
                 ),
+                ft.Row(
+                    controls=[
+                        TrigButton(text="sin", button_clicked=self.button_clicked),
+                        TrigButton(text="cos", button_clicked=self.button_clicked),
+                        TrigButton(text="tan", button_clicked=self.button_clicked),
+                    ]
+                ),
             ]
         )
 
@@ -104,7 +113,7 @@ class CalculatorApp(ft.Container):
                 self.result.value = data
                 self.new_operand = False
             else:
-                self.result.value = self.result.value + data
+                self.result.value += data
 
         elif data in ("+", "-", "*", "/"):
             self.result.value = self.calculate(
@@ -117,24 +126,27 @@ class CalculatorApp(ft.Container):
                 self.operand1 = float(self.result.value)
             self.new_operand = True
 
-        elif data in ("="):
+        elif data == "=":
             self.result.value = self.calculate(
                 self.operand1, float(self.result.value), self.operator
             )
             self.reset()
 
-        elif data in ("%"):
+        elif data == "%":
             self.result.value = float(self.result.value) / 100
             self.reset()
 
-        elif data in ("+/-"):
+        elif data == "+/-":
             if float(self.result.value) > 0:
                 self.result.value = "-" + str(self.result.value)
-
             elif float(self.result.value) < 0:
                 self.result.value = str(
                     self.format_number(abs(float(self.result.value)))
                 )
+
+        elif data in ("sin", "cos", "tan"):
+            self.result.value = self.calculate_trig_function(data, float(self.result.value))
+            self.reset()
 
         self.update()
 
@@ -145,35 +157,34 @@ class CalculatorApp(ft.Container):
             return num
 
     def calculate(self, operand1, operand2, operator):
-
         if operator == "+":
             return self.format_number(operand1 + operand2)
-
         elif operator == "-":
             return self.format_number(operand1 - operand2)
-
         elif operator == "*":
             return self.format_number(operand1 * operand2)
-
         elif operator == "/":
             if operand2 == 0:
                 return "Error"
             else:
                 return self.format_number(operand1 / operand2)
 
+    def calculate_trig_function(self, function, value):
+        if function == "sin":
+            return self.format_number(math.sin(math.radians(value)))
+        elif function == "cos":
+            return self.format_number(math.cos(math.radians(value)))
+        elif function == "tan":
+            return self.format_number(math.tan(math.radians(value)))
+
     def reset(self):
         self.operator = "+"
         self.operand1 = 0
         self.new_operand = True
 
-
 def main(page: ft.Page):
     page.title = "Calc App"
-    # create application instance
     calc = CalculatorApp()
-
-    # add application's root control to the page
     page.add(calc)
-
 
 ft.app(target=main)
